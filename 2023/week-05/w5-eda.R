@@ -2,6 +2,9 @@ library(tidyverse)
 library(mapview)
 library(osmdata)
 library(sf)
+library(gganimate)
+library(osrm)
+library(ggmap)
 
 cats_uk <- read.csv('./2023/week-05/data/cats_uk.csv')
 cats_uk_reference <- read.csv('./2023/week-05/data/cats_uk_reference.csv')
@@ -76,10 +79,53 @@ map_with_data <- map + geom_sf(
 #                                 expand = FALSE)
 # map_with_data <- map + geom_point(max_cat, mapping=aes(x = "location_long", y = "location_lat"))
 map_with_data
-
+times <- as.POSIXct(max_cat$timestamp, "%Y-%m-%dT%H:%M:%Sz")
 map_with_animation <- map_with_data +
-  transition_time(year) +
+  transition_time(times) +
   ggtitle('Year: {frame_time}',
           subtitle = 'Frame {frame} of {nframes}')
-num_years <- max(test_data$year) - min(test_data$year) + 1
+# num_years <- max(points_sf$timestamp) - min(points_sf$timestamp) + 1
+num_years <- nrow(max_cat) + 1
 animate(map_with_animation, nframes = num_years)
+
+######
+
+max_cat <- filter(cats_uk, tag_id == "Max-Tag")
+points_sf <- max_cat %>% 
+  st_as_sf(coords = c("location_long", "location_lat"), crs = 4326)
+
+osroute <- osrm::osrmRoute(loc = points_sf,
+                           returnclass = "sf")
+osroute_sampled <- st_transform(osroute) %>%
+  st_sample(type = 'regular', size = 50) %>%
+  st_cast('POINT') %>%
+  st_as_sf()
+
+osroute_xy <- osroute_sampled %>% 
+  mutate(seq = 1:nrow(.),
+         x = st_coordinates(.)[,"X"],
+         y = st_coordinates(.)[,"Y"])
+# BMM <- get_stamenmap(bbox = data,
+#                      zoom = 6,
+#                      maptype = "terrain")
+
+BMM <- get_stamenmap(bbox = c(-6, 49.5, -3, 51),
+                     zoom = 10,
+                     maptype = "watercolor")
+
+
+animation <- ggmap(BMM) + 
+  geom_point(data = osroute_xy,
+             aes(x = x, y = y),
+             color = "red",
+             size = 4) +
+  theme_void() +
+  transition_reveal(seq) +
+  shadow_wake(wake_length = 1/6)
+gganimate::animate(animation, 
+                   nframes = 2*(nrow(osroute_xy)+1), 
+                   height = 800, 
+                   width = 760,
+                   fps = 10, 
+                   renderer = gifski_renderer(loop = T))
+gganimate::anim_save('animated_bmm.gif', animation = last_animation())
