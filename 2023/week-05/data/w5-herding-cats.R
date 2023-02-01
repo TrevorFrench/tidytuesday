@@ -3,6 +3,7 @@ rm(list = ls(all.names = TRUE))
 #-------------------------------------------------------------------------------
 #-----------------------------------LIBRARIES-----------------------------------
 #-------------------------------------------------------------------------------
+library(dplyr)
 library(osrm)
 library(ggmap)
 library(sf)
@@ -79,7 +80,7 @@ cj_route <- cat_data(cj)
 animation <- ggmap(base_map) +
   geom_point(data = max_route,
              aes(x = x, y = y),
-             color = "#FFCAB1",
+             color = "#0094C6",
              size = 4) +
   geom_point(data = smokeylongnose_route,
              aes(x = x, y = y),
@@ -87,7 +88,7 @@ animation <- ggmap(base_map) +
              size = 4) +
   geom_point(data = pants_route,
              aes(x = x, y = y),
-             color = "#69D1C5",
+             color = "red",
              size = 4) +
   geom_point(data = missy_route,
              aes(x = x, y = y),
