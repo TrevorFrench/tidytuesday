@@ -74,7 +74,7 @@ p <- tmp %>%
   geom_line(aes(color = stock_symbol),
             color = tmp$color,
             size = 1.2) +
-  # geom_label(aes(label = round((beg_change * 100), digits = 2), colour = color, x = date.x, y = 450)) +
+
   theme(
     legend.position = "none",
     plot.title = element_text(size = 14),
